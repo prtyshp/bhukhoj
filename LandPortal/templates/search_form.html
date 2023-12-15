@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}BhuKhoj{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Land Search Form</h1>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="district" class="form-label">Select District</label>
+            <select class="form-select" id="district" name="district" data-parent-field="district">
+                <option value="" {% if not form.district.data %} selected {% endif %}>Any</option>
+                {% for district, tehsils in district_data.items() %}
+                    <option value="{{ district }}" {% if form.district.data == district %} selected {% endif %}>{{ district }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="tehsil" class="form-label">Select Tehsil</label>
+            <select class="form-select" id="tehsil" name="tehsil" data-parent-field="district">
+                <option value="" {% if not form.tehsil.data %} selected {% endif %}>Any</option> 
+                {% if form.district.data and form.district.data in district_data.keys() %}
+                    {% for tehsil in district_data[form.district.data].keys() %}
+                        <option value="{{ tehsil }}" {% if form.tehsil.data == tehsil %} selected {% endif %}>{{ tehsil }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>        
+        <div class="mb-3">
+            <label for="village" class="form-label">Select Village</label>
+            <select class="form-select" id="village" name="village" data-parent-field="tehsil">
+                <option value="" {% if not form.village.data %} selected {% endif %}>Any</option> 
+                {% if form.district.data and form.tehsil.data and form.district.data in district_data.keys() and form.tehsil.data in district_data[form.district.data].keys() %}
+                    {% for village_code, village in district_data[form.district.data][form.tehsil.data].items() %}
+                        <option value="{{ village_code }}" {% if form.village.data == village_code %} selected {% endif %}>{{ village }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="land_type" class="form-label">Select Land Type</label>
+            <select class="form-select" id="land_type" name="land_type">
+                {% for land_type_key, land_type_value in land_types.items() %}
+                    <option value="{{ land_type_key }}">{{ land_type_value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="area" class="form-label">Area (in hectares)</label>
+            <input type="number" step="0.01" class="form-control" id="area" name="area" required>
+        </div>
+        {{ form.csrf_token }}
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+</div>
+
+<script>
+    console.log('Script is running!');
+    // Parse the JSON data back to an object
+    const district_data = {{ district_data|safe }}; // Parse the JSON data to a JavaScript object
+
+    const districtSelect = document.getElementById('district');
+    const tehsilSelect = document.getElementById('tehsil');
+    const villageSelect = document.getElementById('village');
+
+    // Function to update the tehsil dropdown options based on the selected district
+    function updateTehsilDropdown() {
+        const selectedDistrict = districtSelect.value;
+        const tehsils = district_data[selectedDistrict];
+
+        // Clear previous options in the tehsil dropdown
+        tehsilSelect.innerHTML = '<option value="" {% if not form.tehsil.data %} selected {% endif %}>Any</option>';
+        if (selectedDistrict !== '') {
+            tehsilSelect.disabled = false;
+            for (const tehsil in tehsils) {
+                const option = document.createElement('option');
+                option.value = tehsil;
+                option.textContent = tehsil;
+                tehsilSelect.appendChild(option);
+            }
+        } else {
+            tehsilSelect.disabled = true;
+            villageSelect.disabled = true;
+        }
+        // Update the village dropdown based on the selected district and tehsil
+        updateVillageDropdown();
+    }
+
+    // Function to update the village dropdown options based on the selected tehsil
+    function updateVillageDropdown() {
+        const selectedDistrict = districtSelect.value;
+        const selectedTehsil = tehsilSelect.value;
+        //const villages = district_data[selectedDistrict][selectedTehsil];
+        const villages = selectedTehsil !== '' ? district_data[selectedDistrict][selectedTehsil] : {};
+
+        // Clear previous options in the village dropdown
+        villageSelect.innerHTML = '<option value="" {% if not form.village.data %} selected {% endif %}>Any</option>';
+        if (selectedTehsil !== '') {
+            villageSelect.disabled = false;
+            for (const villageCode in  villages) {
+                const option = document.createElement('option');
+                option.value = villageCode;
+                option.textContent = villages[villageCode];
+                villageSelect.appendChild(option);
+            }
+        } else {
+            villageSelect.disabled = true;
+        }
+    }
+
+    // Call the functions when the page loads
+    updateTehsilDropdown();
+    //updateVillageDropdown();
+
+    // Add event listeners to the district and tehsil dropdowns
+    districtSelect.addEventListener('change', () => {
+        updateTehsilDropdown();
+    //    updateVillageDropdown();
+    });
+
+    tehsilSelect.addEventListener('change', () => {
+        updateVillageDropdown();
+    });
+</script>
+{% endblock %}

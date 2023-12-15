@@ -1,0 +1,24 @@
+<!DOCTYPE_html>
+<html lang = "en">
+    <head>
+        <meta charset = "utf-8">
+        <meta name = "viewport" content ="width=device-width, initial-scale=1">
+
+        <title>
+            {% block title %}
+            {% endblock %}
+        </title>
+
+        {{ bootstrap.load_css() }}
+
+        <style>
+            body { background: #e8f1f9; }
+        </style>
+    </head>
+    <body>
+        {% block content %}
+        {% endblock %}
+
+        {{ bootstrap.load_js() }}
+    </body>
+</html>
